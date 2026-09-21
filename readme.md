@@ -104,7 +104,28 @@ metallb 必须先于 ingress-nginx — ingress-nginx 的 `type: LoadBalancer` �
 ## 卸载
 
 ```bash
+# 删除 Application（ArgoCD 会自动清理对应资源）
 kubectl delete -f apps/config/
-kubectl delete -f appprojs/
+
+# 删完 Application 后手动清理残留
 kubectl delete ns metallb-system ingress-nginx
+
+# 删除 AppProject
+kubectl delete -f appprojs/
+
+# 手动清理 CRD（helm uninstall 无法自动删除子 chart 的 CRD）
+kubectl delete crd \
+  bfdprofiles.metallb.io \
+  bgpadvertisements.metallb.io \
+  bgppeers.metallb.io \
+  bgpsessionstates.frrk8s.metallb.io \
+  communities.metallb.io \
+  configurationstates.metallb.io \
+  frrconfigurations.frrk8s.metallb.io \
+  frrk8sconfigurations.frrk8s.metallb.io \
+  frrnodestates.frrk8s.metallb.io \
+  ipaddresspools.metallb.io \
+  l2advertisements.metallb.io \
+  servicebgpstatuses.metallb.io \
+  servicel2statuses.metallb.io
 ```
