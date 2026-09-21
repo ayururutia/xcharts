@@ -1,0 +1,11 @@
+controller:
+  config:
+    worker-processes: "4"
+  service:
+    type: LoadBalancer
+  ingressClass: nginx
+  ingressClassResource:
+    name: nginx
+    default: true
+    controllerValue: k8s.io/ingress-nginx
+  watchIngressWithoutClass: true

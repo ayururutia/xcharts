@@ -1,0 +1,9 @@
+ipAddressPools:
+  main:
+    addresses:
+      - 172.16.1.240-172.16.1.250
+
+l2Advertisements:
+  main:
+    ipAddressPools:
+      - main
