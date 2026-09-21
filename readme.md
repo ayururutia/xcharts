@@ -1,122 +1,150 @@
-# Helm Charts
-
-## 核心概念
-
-三个核心对象：
-
-| 对象 | 是什么 | 例子 |
-|------|--------|------|
-| **Chart** | 应用的打包格式，包含模板和默认值 | `metallb/` |
-| **Repository** | 存放 Chart 的 HTTP 服务器 | `https://metallb.github.io/metallb` |
-| **Release** | Chart 的一次部署实例 | `helm install metallb ./metallb` |
+# K8sCharts
 
 ## 目录结构
 
 ```
-charts/metallb/
-  Chart.yaml   # chart 元信息 + 依赖声明
-  values.yaml  # 覆盖上游默认值
+k8scharts/
+├── appprojs/          # ArgoCD AppProject（分组权限边界）
+│   ├── config.yaml        # 基础设施组
+│   └── default.yaml       # 应用组
+├── apps/              # ArgoCD Application（部署声明）
+│   ├── config/            # 基础设施
+│   │   ├── metallb.yaml
+│   │   └── ingress-nginx.yaml
+│   └── default/           # 业务应用（空）
+└── charts/            # Helm Chart（配置 + 模板）
+    ├── metallb/
+    │   ├── Chart.yaml
+    │   ├── values.yaml
+    │   ├── .helmignore
+    │   └── templates/
+    └── ingress-nginx/
+        ├── Chart.yaml
+        ├── values.yaml
+        └── .helmignore
 ```
 
-本项目用的是 **umbrella chart** 模式：自己写一个轻量 chart，通过 `dependencies` 引用上游 chart，只覆盖需要的值。
+## 三层关系
 
-## Chart.yaml
+```
+AppProject（管权限） → Application（管部署） → Chart（管模板）
+```
+
+| 层 | 是什么 | 例子 |
+|----|--------|------|
+| **AppProject** | 限制 ArgoCD Application 能操作哪些资源类型 | `config` 组允许 CRD、ClusterRole；`default` 组全放 |
+| **Application** | 声明一个 chart 在哪里、部署到哪个 ns | `metallb.yaml` 指向 `charts/metallb`，部署到 `metallb-system` |
+| **Chart** | umbrella chart — 依赖上游 + 自定义模板 + 覆写 values | `charts/metallb/` 包装 metallb 上游 + 生成 IPAddressPool CRD |
+
+## Chart 模式
+
+本项目用 **umbrella chart**：自己写一个轻量 chart，通过 `dependencies` 引用上游，只覆写需要的值。
+
+### Chart.yaml
 
 ```yaml
 apiVersion: v2
-name: metallb                          # 本地 chart 名
+name: metallb
 type: application
-version: 0.1.0                         # 本地 chart 版本
+version: 0.1.0
 dependencies:
   - name: metallb                      # 上游 chart 名
-    repository: https://...            # 上游 repo 地址
+    repository: https://metallb.github.io/metallb
     version: 0.16.1                    # 上游 chart 版本
 ```
 
-`name` 相同是故意的 — umbrella chart 名和上游 chart 名通常一致，覆盖时通过本地 `values.yaml` 注入自定义配置。
+### values.yaml
 
-## values.yaml
-
-上游 chart 有自己的默认 `values.yaml`，你的 `values.yaml` 会**合并覆盖**它。例如 metallb 上游有几十项配置，这里只覆写实际的 IP 池和 L2 宣告：
+上游 chart 有自己的默认 values，你的 `values.yaml` 会**合并覆盖**。自定义 key 由 `templates/` 渲染：
 
 ```yaml
-ipAddressPools:
+# metallb — 自定义 key，由 templates/ 生成 CRD
+ipaddresspools:
   main:
     addresses:
       - 192.168.49.240-192.168.49.250
-l2Advertisements:
+l2advertisements:
   main:
     ipAddressPools:
       - main
 ```
 
-查看上游有哪些值可覆写：`helm show values <repo>/<chart>`
-
-## 另一个例子：ingress-nginx
-
-覆写 controller 配置和 Service 类型：
-
 ```yaml
+# ingress-nginx — 透传上游 key
 controller:
-  config:
-    worker-processes: "4"
   service:
     type: LoadBalancer              # metallb 接管后分配外部 IP
-  ingressClass: nginx
   ingressClassResource:
     name: nginx
-    default: true                   # 设为默认 IngressClass
-    controllerValue: k8s.io/ingress-nginx
-  watchIngressWithoutClass: true
+    default: true
 ```
 
-本质一样：上游 chart 定义了几十项配置，`values.yaml` 只覆写需要改的部分。
+### templates/
 
-## 常用操作
+自定义资源由 templates 生成，不依赖上游模板：
+
+```yaml
+# templates/ipaddresspool.yaml
+{{`{{- range $k, $v := .Values.ipaddresspools }}
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: {{ $k }}
+spec:
+  {{- toYaml $v | nindent 2 }}
+---
+{{- end }}`}}
+```
+
+## 部署
+
+### 手动 Helm
 
 ```bash
-# 拉依赖（下载上游 chart 到 charts/ 子目录）
-helm dependency update ./charts/metallb
+# 拉依赖
+cd charts/metallb && helm dependency update
 
 # 安装
-helm install metallb ./charts/metallb -n metallb-system --create-namespace
+helm upgrade --install metallb . -n metallb-system --create-namespace
+```
 
-# 升级（修改 values.yaml 后）
-helm upgrade metallb ./charts/metallb -n metallb-system
+### 通过 ArgoCD
 
-# 查看已部署 release 的值
-helm get values metallb -n metallb-system
+```bash
+# 先部署 AppProjects
+kubectl apply -f appprojs/
 
-# 预览渲染结果（不实际部署，调试用）
-helm template metallb ./charts/metallb
-
-# 卸载
-helm uninstall metallb -n metallb-system
+# 再部署 Applications（ArgoCD 会自动同步）
+kubectl apply -f apps/config/
 ```
 
 ## 部署顺序
 
-metallb 必须在 ingress-nginx 之前部署，因为 ingress-nginx 的 `type: LoadBalancer` 需要 metallb 提供外部 IP：
+metallb 先于 ingress-nginx，因为 ingress-nginx 的 `type: LoadBalancer` 需要 metallb 提供 IP。
 
-```bash
-# 1. metallb（提供 LoadBalancer IP）
-cd charts/metallb
-helm dependency update
-helm upgrade --install metallb . -n metallb-system --create-namespace
+## Application 两种写法
 
-# 2. ingress-nginx（申请 LoadBalancer）
-cd ../ingress-nginx
-helm dependency update
-helm upgrade --install ingress-nginx . -n ingress-nginx --create-namespace
+**本地 chart**（有自定义模板，如 metallb）：
 
-# 3. 验证 metallb 给 ingress-nginx 分配了 IP
-kubectl get svc -n ingress-nginx ingress-nginx-controller
+```yaml
+source:
+  path: charts/metallb
+  repoURL: <本仓库>
+  helm:
+    valueFiles:
+      - values.yaml
 ```
 
-## 本地开发流程
+**直引上游**（无自定义模板，values 内联）：
 
-1. 在 `Chart.yaml` 声明上游依赖（name + repo + version）
-2. 运行 `helm dependency update` 拉取依赖
-3. 在 `values.yaml` 覆写需要的值
-4. `helm install/upgrade` 部署
-5. 改 values → `helm upgrade` → 重复
+```yaml
+source:
+  chart: ingress-nginx
+  repoURL: https://kubernetes.github.io/ingress-nginx
+  targetRevision: 4.15.1
+  helm:
+    values: |-
+      controller:
+        service:
+          type: LoadBalancer
+```

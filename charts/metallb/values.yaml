@@ -1,0 +1,9 @@
+l2advertisements:
+  main:
+    ipAddressPools:
+      - main
+
+ipaddresspools:
+  main:
+    addresses:
+      - 192.168.49.240-192.168.49.250
