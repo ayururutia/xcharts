@@ -9,6 +9,10 @@ helm upgrade --install argocd argo/argo-cd -n argocd --create-namespace
 
 kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath='{.data.password}' | base64 -d && echo
+
+# 访问 UI
+kubectl port-forward service/argocd-server -n argocd 8080:443
+# https://localhost:8080  用户名 admin
 ```
 
 ## GitOps 数据流
