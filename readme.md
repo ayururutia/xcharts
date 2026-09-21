@@ -31,30 +31,32 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 
 ArgoCD 只看远程仓库，本地改完不 push，集群不会变。Application 中的 `repoURL` 必须是一个 git 能 clone 的地址。
 
-### SSH 配置
+### 注册 SSH 仓库
+
+ArgoCD v3.5 通过 Secret（label `argocd.argoproj.io/secret-type: repository`）注册仓库，不是 configmap。
 
 ```bash
-# 注册私钥
-kubectl -n argocd create secret generic argocd-ssh-key \
-  --from-file=sshPrivateKey=$HOME/.ssh/id_rsa
-
-# 注册 known_hosts（非标准端口需要指定 -p）
-kubectl -n argocd apply -f - <<EOF
+cat > /tmp/repo-secret.yaml <<EOF
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
-  name: argocd-ssh-known-hosts-cm
-data:
-  ssh_known_hosts: |
-$(ssh-keyscan -p 2222 100.127.255.11 | sed 's/^/    /')
+  name: xcharts-repo
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  url: ssh://git@<git 服务器 IP>:<端口>/<仓库路径>
+  sshPrivateKey: |
 EOF
 
-# 注册仓库
-kubectl -n argocd patch configmap argocd-cm -p \
-  '{"data":{"repositories":"[{\"url\":\"ssh://git@100.127.255.11:2222/jaken/xcharts.git\",\"sshPrivateKeySecret\":{\"name\":\"argocd-ssh-key\",\"key\":\"sshPrivateKey\"}}]"}}'
+# 把私钥内容追加到 YAML（每行缩进 4 空格）
+while IFS= read -r line; do
+  echo "    $line" >> /tmp/repo-secret.yaml
+done < ~/.ssh/id_ed25519
 
-# 重启生效
-kubectl -n argocd rollout restart deployment argocd-repo-server
+echo '  insecure: "true"' >> /tmp/repo-secret.yaml
+
+kubectl apply -f /tmp/repo-secret.yaml
 ```
 
 ### 应用配置
@@ -74,21 +76,31 @@ AppProject（管权限） → Application（管部署） → Chart（管模板�
 |----|------|------|
 | AppProject | 限制可操作的资源类型 | `appprojs/` |
 | Application | 声明 chart 来源和目标 ns | `apps/` |
-| Chart | umbrella chart — 引用上游 + 自定义模板 | `charts/` |
+| Chart | 包装上游 chart + 自定义模板 | `charts/` |
 
 ## 示例一：metallb（umbrella chart 模式）
 
-自己写轻量 chart，通过 `dependencies` 引用上游 Helm chart，只覆写需要的值。
+需自定义 CRD 模板（IPAddressPool、L2Advertisement），同时包装上游 metallb chart。
 
-`charts/metallb/Chart.yaml`：
+关键：**不使用** Chart.yaml 的 `dependencies`（会触发 ArgoCD 拉外网 helm repo）。改为手动下载上游 chart，解压到 `charts/` 子目录，直接提交。
+
+```bash
+# 拉取上游 chart
+helm pull metallb --repo https://metallb.github.io/metallb --version 0.16.1
+
+# 解压到子目录
+mkdir -p charts/metallb/charts
+tar xzf metallb-0.16.1.tgz -C charts/metallb/charts/
+
+# 提交
+git add charts/metallb/charts/ && git commit -m "chore: add metallb upstream chart"
+```
+
+`charts/metallb/Chart.yaml`（无 dependencies）：
 ```yaml
 apiVersion: v2
 name: metallb
 version: 0.1.0
-dependencies:
-  - name: metallb
-    repository: https://metallb.github.io/metallb
-    version: 0.16.1
 ```
 
 `charts/metallb/values.yaml`（自定义 key，由 templates 渲染成 CRD）：
@@ -103,6 +115,8 @@ l2advertisements:
       - main
 ```
 
+`charts/metallb/templates/` 中放自定义 CRD 模板（ipaddresspool.yaml、l2advertisement.yaml），上游模板在 `charts/metallb/charts/metallb/templates/` 中，Helm 自动合并。
+
 `apps/config/metallb.yaml`：
 ```yaml
 source:
@@ -115,7 +129,7 @@ source:
 
 ## 示例二：ingress-nginx（直引上游模式）
 
-无自定义模板，直接在 Application 中内联 values。
+无自定义模板，直接在 Application 中引用上游 Helm chart，values 内联。
 
 `apps/config/ingress-nginx.yaml`：
 ```yaml
