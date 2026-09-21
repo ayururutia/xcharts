@@ -64,3 +64,10 @@ kubectl -n argocd patch application <app名> --type merge \
 ```
 
 如果 AppProject 的 `clusterResourceWhitelist` 缺少资源类型（如 `admissionregistration.k8s.io`），sync 会报 `not permitted in project`，需补上对应 group/kind。
+
+## 卸载
+
+```bash
+helm uninstall argocd -n argocd
+kubectl delete ns argocd
+```

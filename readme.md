@@ -100,3 +100,11 @@ source:
 ## 部署顺序
 
 metallb 必须先于 ingress-nginx — ingress-nginx 的 `type: LoadBalancer` 依赖 metallb 分配 IP。
+
+## 卸载
+
+```bash
+kubectl delete -f apps/config/
+kubectl delete -f appprojs/
+kubectl delete ns metallb-system ingress-nginx
+```
