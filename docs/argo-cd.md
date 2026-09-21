@@ -30,18 +30,18 @@ cat > /tmp/repo-secret.yaml <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
-  name: <自定义名称>
+  name: xcharts-repo
   namespace: argocd
   labels:
     argocd.argoproj.io/secret-type: repository
 stringData:
-  url: ssh://git@<IP>:<端口>/<路径>
+  url: ssh://git@100.127.255.11:2222/jaken/xcharts.git
   sshPrivateKey: |
 EOF
 
 while IFS= read -r line; do
   echo "    $line" >> /tmp/repo-secret.yaml
-done < ~/.ssh/id_ed25519
+done < ~/.ssh/x
 
 echo '  insecure: "true"' >> /tmp/repo-secret.yaml
 kubectl apply -f /tmp/repo-secret.yaml
