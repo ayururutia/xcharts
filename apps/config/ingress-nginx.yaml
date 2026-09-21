@@ -9,12 +9,17 @@ spec:
     server: https://kubernetes.default.svc
   project: config
   source:
-    path: charts/ingress-nginx
-    repoURL: ssh://git@100.127.255.11:2222/jaken/xcharts.git
-    targetRevision: HEAD
+    chart: ingress-nginx
+    repoURL: https://kubernetes.github.io/ingress-nginx
+    targetRevision: 4.15.1
     helm:
-      valueFiles:
-        - values.yaml
+      values: |-
+        controller:
+          service:
+            type: LoadBalancer
+          ingressClassResource:
+            name: nginx
+            default: true
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
