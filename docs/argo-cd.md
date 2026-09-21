@@ -15,6 +15,18 @@ kubectl port-forward service/argocd-server -n argocd 8080:443
 # https://localhost:8080  用户名 admin
 ```
 
+### 代理配置
+
+如果集群内需要代理才能访问外网（Helm repo 等），给 repo-server 加上：
+
+```bash
+kubectl -n argocd set env deployment/argocd-repo-server \
+  HTTP_PROXY=http://192.168.49.1:3128 \
+  HTTPS_PROXY=http://192.168.49.1:3128
+```
+
+pod 重启后生效，`helm dependency build`、`helm repo add` 等操作会通过代理出去。
+
 ## GitOps 数据流
 
 本地写代码 → `git push` 远程仓库 → ArgoCD 自动 `git pull` + `helm template` → 同步到集群。
