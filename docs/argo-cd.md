@@ -72,6 +72,11 @@ kubectl -n argocd patch application <app名> --type merge \
 ## 卸载
 
 ```bash
+# 先清理应用（readme 卸载步骤）
+kubectl delete -f apps/config/
+kubectl delete -f appprojs/
+
+# 再卸载 ArgoCD
 helm uninstall argocd -n argocd
 kubectl delete ns argocd
 ```
