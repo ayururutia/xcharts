@@ -1,2 +1,2 @@
-# empty — helm dependencies are committed for ArgoCD compatibility
+charts/*/charts/
 .playwright-mcp/
