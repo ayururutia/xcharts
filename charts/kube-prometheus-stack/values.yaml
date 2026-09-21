@@ -1,0 +1,17 @@
+# 精简配置，学习用
+alertmanager:
+  enabled: false
+grafana:
+  enabled: false
+prometheus:
+  prometheusSpec:
+    retention: 24h
+    resources:
+      requests:
+        memory: 512Mi
+nodeExporter:
+  enabled: false
+kube-state-metrics:
+  enabled: true
+prometheusOperator:
+  enabled: true
