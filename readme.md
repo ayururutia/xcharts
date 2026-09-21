@@ -43,13 +43,15 @@ dependencies:
     version: 0.16.1
 ```
 
-本地拉依赖（生成 Chart.lock + 下载 `.tgz` 到 `charts/` 目录）：
+修改 `Chart.yaml` 的依赖后，本地执行：
 
 ```bash
 helm dependency update charts/metallb
 ```
 
-只提交 `Chart.lock` + `charts/metallb-0.16.1.tgz` 两个文件，不提交解压后的上游源码。
+生成 `Chart.lock`（提交）和 `charts/*.tgz`（gitignore 忽略）。ArgoCD 同步时会自动跑 `helm dependency build` 从上游 Helm repo 拉取。
+
+如果集群内不通外网，可暂将 `.tgz` 也提上来
 
 `charts/metallb/values.yaml`（自定义 key，由 templates 渲染成 CRD）：
 ```yaml
