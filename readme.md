@@ -28,6 +28,71 @@ AppProject（管权限） → Application（管部署） → Chart（管模板�
 | Application | 声明 chart 来源和目标 ns | `apps/` |
 | Chart | 包装上游 chart + 自定义模板 | `charts/` |
 
+## 添加新应用
+
+每次新增对应三件事：写 Chart、写 Application、apply + sync。
+
+**1. 写 Chart**
+
+```yaml
+# charts/<name>/Chart.yaml
+apiVersion: v2
+name: xxx
+version: 0.1.0
+dependencies:
+  - name: xxx
+    repository: https://...
+    version: x.y.z
+```
+
+```bash
+helm dependency update charts/<name>   # 生成 Chart.lock
+git add charts/<name>/Chart.lock && git commit
+git push
+```
+
+**2. 写 Application**
+
+```yaml
+# apps/<project>/<name>.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: <name>
+  namespace: argocd
+spec:
+  destination:
+    namespace: <ns>
+    server: https://kubernetes.default.svc
+  project: <project>
+  source:
+    path: charts/<name>
+    repoURL: <本仓库地址>
+    targetRevision: HEAD
+    helm:
+      valueFiles:
+        - values.yaml
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+```
+
+**3. apply + sync**
+
+```bash
+kubectl apply -f appprojs/<project>.yaml   # 新 AppProject 先 apply
+kubectl apply -f apps/<project>/            # 再 apply Application
+```
+
+然后在 ArgoCD UI 点 Sync，或命令行：
+
+```bash
+kubectl -n argocd patch application <name> --type merge \
+  -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}'
+```
+
+如果 sync 报 `not permitted in project`，给 AppProject 的 `clusterResourceWhitelist` 补上缺失的 group/kind。
+
 ## 示例一：metallb（umbrella chart 模式）
 
 需自定义 CRD 模板，同时引用上游 metallb chart。
