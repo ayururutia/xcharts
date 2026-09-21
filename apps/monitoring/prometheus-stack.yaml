@@ -8,16 +8,13 @@ spec:
     namespace: monitoring
     server: https://kubernetes.default.svc
   project: monitoring
-  sources:
-    - path: charts/kube-prometheus-stack
-      repoURL: ssh://git@100.127.255.11:2222/jaken/xcharts.git
-      targetRevision: HEAD
-      helm:
-        valueFiles:
-          - values.yaml
-    - path: .
-      repoURL: https://github.com/dotdc/grafana-dashboards-kubernetes
-      targetRevision: HEAD
+  source:
+    path: charts/kube-prometheus-stack
+    repoURL: ssh://git@100.127.255.11:2222/jaken/xcharts.git
+    targetRevision: HEAD
+    helm:
+      valueFiles:
+        - values.yaml
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
