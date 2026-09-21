@@ -10,7 +10,7 @@ spec:
   project: config
   source:
     path: charts/metallb
-    repoURL: ssh://git@172.31.0.11:2222/jaken/xcharts.git
+    repoURL: ssh://git@100.127.255.11:2222/jaken/xcharts.git
     targetRevision: HEAD
     helm:
       valueFiles:

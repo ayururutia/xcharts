@@ -1,2 +1,2 @@
-charts/*/charts/
-charts/*/Chart.lock
+# empty — helm dependencies are committed for ArgoCD compatibility
+.playwright-mcp/

@@ -46,12 +46,12 @@ metadata:
   name: argocd-ssh-known-hosts-cm
 data:
   ssh_known_hosts: |
-$(ssh-keyscan -p 2222 172.31.0.11 | sed 's/^/    /')
+$(ssh-keyscan -p 2222 100.127.255.11 | sed 's/^/    /')
 EOF
 
 # 注册仓库
 kubectl -n argocd patch configmap argocd-cm -p \
-  '{"data":{"repositories":"[{\"url\":\"ssh://git@172.31.0.11:2222/jaken/xcharts.git\",\"sshPrivateKeySecret\":{\"name\":\"argocd-ssh-key\",\"key\":\"sshPrivateKey\"}}]"}}'
+  '{"data":{"repositories":"[{\"url\":\"ssh://git@100.127.255.11:2222/jaken/xcharts.git\",\"sshPrivateKeySecret\":{\"name\":\"argocd-ssh-key\",\"key\":\"sshPrivateKey\"}}]"}}'
 
 # 重启生效
 kubectl -n argocd rollout restart deployment argocd-repo-server
