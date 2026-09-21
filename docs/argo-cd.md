@@ -17,7 +17,7 @@ kubectl port-forward service/argocd-server -n argocd 8080:443
 
 ### 代理配置
 
-如果集群内需要代理才能访问外网（Helm repo 等），给 repo-server 加上：
+minikube 的 containerd 代理只影响**拉镜像**，容器内部进程不继承。repo-server 跑 `helm dependency build` 时需要访问外网 Helm repo，必须单独设置：
 
 ```bash
 kubectl -n argocd set env deployment/argocd-repo-server \
@@ -25,7 +25,7 @@ kubectl -n argocd set env deployment/argocd-repo-server \
   HTTPS_PROXY=http://192.168.49.1:3128
 ```
 
-pod 重启后生效，`helm dependency build`、`helm repo add` 等操作会通过代理出去。
+pod 重启后生效。
 
 ## GitOps 数据流
 
