@@ -66,6 +66,20 @@ kubectl apply -f appprojs/
 kubectl apply -f apps/config/
 ```
 
+### 同步
+
+ArgoCD 默认**不自动同步**，需要手动触发（或在 Application 中开启 `automated`）：
+
+- **浏览器**：进入 Application 详情页，点击 Sync
+- **命令行**：
+
+```bash
+kubectl -n argocd patch application <app名> --type merge \
+  -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}'
+```
+
+如果 AppProject 的 `clusterResourceWhitelist` 缺少资源类型（如 `admissionregistration.k8s.io`），sync 会报 `not permitted in project`，需补上对应 group/kind。
+
 ## 三层模型
 
 ```
