@@ -10,7 +10,7 @@ spec:
   project: config
   source:
     path: charts/ingress-nginx
-    repoURL: ssh://git@example.com/your/k8scharts.git
+    repoURL: ssh://git@172.31.0.11:2222/jaken/xcharts.git
     targetRevision: HEAD
     helm:
       valueFiles:
