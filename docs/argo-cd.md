@@ -56,6 +56,20 @@ while IFS= read -r line; do
 done < ~/.ssh/x
 
 echo '  insecure: "true"' >> /tmp/repo-secret.yaml
+
+cat >> /tmp/repo-secret.yaml <<'EOF'
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: xcharts-repo-https
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  url: https://github.com/ayururutia/xcharts.git
+EOF
+
 kubectl apply -f /tmp/repo-secret.yaml
 ```
 
