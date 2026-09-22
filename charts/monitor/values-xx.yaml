@@ -41,6 +41,7 @@ grafana:
   adminPassword: rin
 
 ingress:
+  enabled: true
   hosts:
     - host: prometheus.ayu.local
       service: prometheus
