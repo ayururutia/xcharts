@@ -13,6 +13,9 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 # 访问 UI
 kubectl port-forward service/argocd-server -n argocd 8080:443
 # https://localhost:8080  用户名 admin
+
+# 外网访问
+kubectl port-forward --address 0.0.0.0 service/argocd-server -n argocd 8080:443
 ```
 
 ### 代理配置
