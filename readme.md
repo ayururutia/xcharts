@@ -157,6 +157,16 @@ source:
       - values.yaml
 ```
 
+### 单独卸载 metallb
+
+如果只需从集群移除 metallb 而不动版本库：
+
+```bash
+kubectl delete application metallb -n argocd
+kubectl delete ns metallb-system --ignore-not-found
+kubectl get crd -o name | grep 'metallb\.io\|frrk8s\.metallb\.io' | xargs kubectl delete
+```
+
 ## 示例二：ingress-nginx（直引上游模式）
 
 无自定义模板，直接在 Application 中引用上游 Helm chart，values 内联。
