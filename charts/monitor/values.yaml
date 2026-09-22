@@ -11,7 +11,7 @@ prometheus:
     limits:
       cpu: 200m
       memory: 512Mi
-  hostNetwork: true
+  hostNetwork: false
   extraScrapeConfigs:
     - job_name: node-exporter
       static_configs:
