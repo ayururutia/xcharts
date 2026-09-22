@@ -12,6 +12,7 @@ prometheus:
       cpu: 200m
       memory: 512Mi
   extraScrapeConfigs: []
+  hostNetwork: false
 
 grafana:
   image: grafana/grafana-oss:10.4.2

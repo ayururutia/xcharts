@@ -1,6 +1,7 @@
 # xx production environment overrides
 
 prometheus:
+  hostNetwork: true
   extraScrapeConfigs:
     - job_name: node-exporter
       static_configs:
@@ -35,6 +36,10 @@ prometheus:
       static_configs:
         - targets: ["100.127.255.11:8001"]
           labels: {instance: "gitea-xx"}
+    - job_name: argocd
+      static_configs:
+        - targets: ["argocd-application-controller-metrics.argocd.svc.cluster.local:8082"]
+          labels: {instance: "argocd-xx"}
 
 grafana:
   adminUser: jaken

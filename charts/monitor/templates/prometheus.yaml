@@ -206,8 +206,8 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9090"
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: {{ .Values.prometheus.hostNetwork }}
+      dnsPolicy: {{ if .Values.prometheus.hostNetwork }}ClusterFirstWithHostNet{{ else }}ClusterFirst{{ end }}
       serviceAccountName: prometheus
       initContainers:
       - name: fix-permissions
