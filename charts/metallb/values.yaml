@@ -1,3 +1,7 @@
+metallb:
+  frrk8s:
+    enabled: false
+
 l2advertisements:
   main:
     ipAddressPools:
