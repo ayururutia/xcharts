@@ -12,16 +12,12 @@ prometheus:
       cpu: 200m
       memory: 512Mi
   extraScrapeConfigs: []
-  #  - job_name: node-exporter
-  #    static_configs:
-  #      - targets: ["100.127.255.146:9100"]
-  #        labels: {instance: "shippo"}
 
 grafana:
   image: grafana/grafana-oss:10.4.2
   storage: 10Gi
-  adminUser: jaken
-  adminPassword: rin
+  adminUser: admin
+  adminPassword: admin
   anonymous:
     enabled: true
     orgName: "Main Org."
@@ -33,19 +29,4 @@ ksm:
 ingress:
   enabled: true
   className: nginx
-  hosts:
-    - host: prometheus.ayu.local
-      service: prometheus
-      port: 9090
-    - host: prometheus.xx.local
-      service: prometheus
-      port: 9090
-    - host: grafana.ayu.local
-      service: grafana
-      port: 3000
-    - host: grafana.xx.local
-      service: grafana
-      port: 3000
-    - host: monitor.rurutia.net
-      service: grafana
-      port: 3000
+  hosts: []
