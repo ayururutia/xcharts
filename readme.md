@@ -2,6 +2,23 @@
 
 ArgoCD + Helm 管理集群基础设施。
 
+## 初始化
+
+```bash
+git clone <仓库地址> && cd xcharts
+for c in charts/*/; do test -f "$c/Chart.yaml" && helm dependency update "$c"; done
+```
+
+注册 SSH 仓库（首次部署前执行一次），详见 [docs/argo-cd.md](docs/argo-cd.md)。
+
+部署：
+
+```bash
+kubectl apply -f appprojs/           # 必须先于 apps，Application 依赖 AppProject
+kubectl apply -f apps/config/
+kubectl apply -f apps/monitoring/
+```
+
 ## Helm 基础概念
 
 | 概念 | 说明 |
