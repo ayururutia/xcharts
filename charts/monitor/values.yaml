@@ -34,6 +34,7 @@ prometheus:
       scheme: https
       static_configs:
         - targets: ["dashboard.x.caix.top:443"]
+          labels: {instance: "frps-cx"}
       basic_auth:
         username: jaken
         password: kubernetes
